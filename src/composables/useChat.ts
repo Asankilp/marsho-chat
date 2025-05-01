@@ -13,7 +13,6 @@ export function useChat() {
     loading.value = true;
     messages.value.push({ text, isUser: true });
     messages.value.push({ text: "", isUser: false, isLoading: true });
-    
     try {
       const result: string = await invoke("make_chat", { name: text });
       const lastIndex = messages.value.length - 1;

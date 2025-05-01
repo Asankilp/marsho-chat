@@ -67,3 +67,10 @@ pub fn load_marsho_config() -> anyhow::Result<MarshoConfig> {
 
     settings.try_deserialize().map_err(Into::into)
 }
+
+pub fn save_marsho_config(config: &Value) -> anyhow::Result<()> {
+    let config_path = "config.yaml";
+    let config_str = serde_yaml::to_string(config)?;
+    std::fs::write(config_path, config_str)?;
+    Ok(())
+}

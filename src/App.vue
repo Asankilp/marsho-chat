@@ -39,7 +39,12 @@ const handleSettingsSave = (settings: any) => {
       <ChatInput @send="sendMessage" :loading="loading" />
     </footer>
 
-    <Settings v-model="showSettings" @save="handleSettingsSave" />
+    <Suspense>
+      <Settings v-model="showSettings" @save="handleSettingsSave" />
+      <template #fallback>
+        <div class="loading-settings">加载设置中...</div>
+      </template>
+    </Suspense>
   </div>
 </template>
 
@@ -121,6 +126,17 @@ body {
 
 .settings-button:hover {
   background: rgba(0, 0, 0, 0.1);
+}
+
+.loading-settings {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 8px;
 }
 
 @media (max-width: 768px) {

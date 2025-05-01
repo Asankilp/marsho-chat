@@ -1,20 +1,35 @@
 <script setup lang="ts">
+import { invoke } from '@tauri-apps/api/core';
+import { AppConfig } from '../models/config';
 import { ref } from 'vue';
 
 defineProps<{
   modelValue: boolean
 }>();
 
+
+async function readConfig() {
+  return await invoke('get_configs') as AppConfig;
+}
+
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'save', settings: any): void
 }>();
 
-const apiKey = ref(localStorage.getItem('apiKey') || '');
+const config = await readConfig();
 
-const save = () => {
-  localStorage.setItem('apiKey', apiKey.value);
-  emit('save', { apiKey: apiKey.value });
+const baseUrl = ref(config.marsho.base_url || '');
+const apiKey = ref(config.marsho.api_key || '');
+const stream = ref(config.marsho.stream || false);
+const systemPrompt = ref(config.marsho.system_prompt || '');
+
+const save = async () => {
+  config.marsho.base_url = baseUrl.value;
+  config.marsho.api_key = apiKey.value;
+  config.marsho.stream = stream.value;
+  config.marsho.system_prompt = systemPrompt.value;
+  emit('save', await invoke('save_configs', { marshoConfig: config.marsho }));
   emit('update:modelValue', false);
 };
 
@@ -29,8 +44,14 @@ const close = () => {
       <h2>设置</h2>
       <div class="settings-content">
         <div class="settings-item">
+          <label>Base URL:</label>
+          <input v-model="baseUrl" placeholder="请输入Base URL" />
           <label>API Key:</label>
-          <input type="password" v-model="apiKey" placeholder="请输入API Key" />
+          <input v-model="apiKey" placeholder="请输入API Key" />
+          <label>流式调用：</label>
+          <input type="checkbox" v-model="stream" />
+          <label>系统提示：</label>
+          <input v-model="systemPrompt" placeholder="请输入系统提示" />
         </div>
       </div>
       <div class="settings-actions">
