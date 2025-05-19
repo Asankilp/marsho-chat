@@ -87,10 +87,11 @@ body {
 }
 
 .chat-header h1 {
-  flex: 1;
   font-size: 1.5rem;
   color: #333;
-  text-align: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .chat-messages {
@@ -116,7 +117,7 @@ body {
   background: none;
   border: none;
   padding: 8px;
-  margin-left: 50px;
+  /* margin-left: 50px; */
   cursor: pointer;
   color: inherit;
   display: flex;
@@ -149,6 +150,11 @@ body {
 
   .chat-header h1 {
     font-size: 1.2rem;
+    position: relative;
+    left: auto;
+    transform: none;
+    text-align: center;
+    flex: 1;
   }
 
   .chat-messages {
