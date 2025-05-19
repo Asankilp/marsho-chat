@@ -118,5 +118,13 @@ defineProps<{
     max-width: 90%;
     font-size: 0.9rem;
   }
+
+	.user-message .message-content {
+		border-radius: 0.75rem 0.75rem 0 0.75rem;
+	}
+
+	.bot-message .message-content {
+		border-radius: 0.75rem 0.75rem 0.75rem 0;
+	}
 }
 </style>

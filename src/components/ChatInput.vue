@@ -94,11 +94,13 @@ function sendMessage() {
   .input-field {
     padding: 0.6rem 1rem;
     font-size: 0.95rem;
+		border-radius: 1rem;
   }
 
   .send-button {
     padding: 0.6rem 1.2rem;
     font-size: 0.95rem;
+		border-radius: 1rem;
   }
 }
 
@@ -110,11 +112,13 @@ function sendMessage() {
   .input-field {
     padding: 0.5rem 0.8rem;
     font-size: 0.9rem;
+		border-radius: 0.5rem;
   }
 
   .send-button {
     padding: 0.5rem 1rem;
     font-size: 0.9rem;
+		border-radius: 0.5rem;
   }
 }
 
