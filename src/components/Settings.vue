@@ -43,16 +43,22 @@ const close = () => {
     <div class="settings-modal">
       <h2>设置</h2>
       <div class="settings-content">
-        <div class="settings-item">
-          <label>Base URL:</label>
-          <input v-model="baseUrl" placeholder="请输入Base URL" />
-          <label>API Key:</label>
-          <input v-model="apiKey" placeholder="请输入API Key" />
-          <label>流式调用：</label>
-          <input type="checkbox" v-model="stream" />
-          <label>系统提示：</label>
-          <input v-model="systemPrompt" placeholder="请输入系统提示" />
-        </div>
+				<div class="settings-item-input">
+					<label>Base URL:</label>
+					<input v-model="baseUrl" placeholder="请输入Base URL" />
+				</div>
+				<div class="settings-item-input">
+					<label>API Key:</label>
+					<input v-model="apiKey" placeholder="请输入API Key" />
+				</div>
+				<div class="settings-item-checkbox">
+					<label>流式调用：</label>
+					<input type="checkbox" v-model="stream" />
+				</div>
+				<div class="settings-item-input">
+					<label>系统提示：</label>
+					<input v-model="systemPrompt" placeholder="请输入系统提示" />
+				</div>
       </div>
       <div class="settings-actions">
         <button @click="save">保存</button>
@@ -87,20 +93,38 @@ const close = () => {
   margin: 20px 0;
 }
 
-.settings-item {
-  margin-bottom: 15px;
-}
-
+/*
 .settings-item label {
   display: block;
   margin-bottom: 5px;
 }
 
 .settings-item input {
-  width: 100%;
+  width: calc(100% - 16px - 2px);
   padding: 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
+}
+*/
+
+.settings-item-input, .settings-item-checkbox {
+	margin-bottom: 1em;
+}
+
+.settings-item-input label {
+	display: block;
+	margin-bottom: 5px;
+}
+
+.settings-item-input input {
+	width: calc(100% - 16px - 2px);
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.settings-item-checkbox input {
+	vertical-align: -2px;
 }
 
 .settings-actions {
