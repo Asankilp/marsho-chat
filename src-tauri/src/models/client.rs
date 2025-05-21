@@ -33,7 +33,7 @@ impl OpenAIClient {
         let mut headers = header::HeaderMap::new();
         headers.insert(
             "Authorization",
-            header::HeaderValue::from_str(api_key)
+            header::HeaderValue::from_str(&format!("Bearer {}", api_key))
                 .context("Failed to create Authorization header")?
         );
 
@@ -57,7 +57,7 @@ impl OpenAIClient {
             
         let body = res.text().await
             .context("Failed to get response body")?;
-
+        println!("Response body: {}", body);
         let json: Value = serde_json::from_str(&body)
             .context("Failed to parse response JSON")?;
 
