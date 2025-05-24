@@ -1,6 +1,6 @@
 import { ref } from 'vue';
-import { invoke } from "@tauri-apps/api/core";
-import type { ChatMessage } from '../types/chat';
+import { invoke, Channel } from "@tauri-apps/api/core";
+import type { ChatMessage, ChatEvent } from '../types/chat';
 
 export function useChat() {
   const messages = ref<ChatMessage[]>([
@@ -13,10 +13,35 @@ export function useChat() {
     loading.value = true;
     messages.value.push({ text, isUser: true });
     messages.value.push({ text: "", isUser: false, isLoading: true });
+    let aiContent = "";
     try {
-      const result: string = await invoke("make_chat", { name: text });
+      const onEvent = new Channel<ChatEvent>();
+      onEvent.onmessage = (message: any) => {
+        if (message.event === "stopped") {
+          const choices = (message.data && (message.data as any)["message"]["choices"]) || [];
+          const content = choices[0]?.delta?.content || "";
+          const finishReason = choices[0]?.finish_reason;
+          console.log(content);
+          if (content) {
+            aiContent += content;
+            const lastIndex = messages.value.length - 1;
+            messages.value[lastIndex] = {
+              ...messages.value[lastIndex],
+              text: aiContent,
+              isLoading: finishReason != "stop"
+            };
+            scrollToBottom();
+          }
+        }
+      };     
+      await invoke("make_chat", { question: text, onEvent });
+      // 最终输出完成，确保 loading 状态被移除
       const lastIndex = messages.value.length - 1;
-      messages.value[lastIndex] = { text: result, isUser: false };
+      messages.value[lastIndex] = { 
+        ...messages.value[lastIndex],
+        text: aiContent,
+        isLoading: false 
+      };
     } catch (error: any) {
       console.error(error);
       const lastIndex = messages.value.length - 1;
@@ -24,7 +49,6 @@ export function useChat() {
     } finally {
       loading.value = false;
     }
-    
     scrollToBottom();
   }
 

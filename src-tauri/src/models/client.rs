@@ -1,10 +1,12 @@
 use std::io::{self, Write};
 
 use anyhow::{Context, Result};
-use futures_util::StreamExt;
+use futures_util::{Stream, StreamExt};
 use reqwest::{header, Client};
 use serde_json::Value;
 use url::Url;
+use async_stream::stream;
+use std::pin::Pin;
 
 use crate::schemas::models::Models;
 
@@ -68,92 +70,59 @@ impl OpenAIClient {
         &self,
         config: &mut Value,
         message: Vec<BaseMessage>,
-    ) -> Result<Value> {
+    ) -> impl Stream<Item = Value> {
         let client = Client::new();
         let url = Url::parse(&self.base_url)
-            .context("Failed to parse base URL")?;
+            .context("Failed to parse base URL").unwrap();
         let api_key = &self.api_key;
         let mut headers = header::HeaderMap::new();
         headers.insert(
             "Authorization",
-            header::HeaderValue::from_str(api_key)
-                .context("Failed to create Authorization header")?
+            header::HeaderValue::from_str(&format!("Bearer {}", api_key))
+                .context("Failed to create Authorization header").unwrap()
         );
 
         if let Value::Object(ref mut map) = config {
             map.insert(
                 "messages".to_string(),
                 serde_json::to_value(message)
-                    .context("Failed to serialize messages")?
+                    .context("Failed to serialize messages").unwrap()
             );
             map.insert("stream".to_string(), serde_json::to_value(true)
-                .context("Failed to serialize stream parameter")?
+                .context("Failed to serialize stream parameter").unwrap()
             );
         }
 
         let res = client
-            .post(url.join("chat/completions")
-                .context("Failed to join URL path")?
-            )
+            .post(url.join("chat/completions").unwrap())
             .headers(headers)
             .json(&config)
             .send()
             .await
-            .context("Failed to send request")?;
+            .context("Failed to send request").unwrap();
 
-        let mut stream = res.bytes_stream();
-        let mut responses = Vec::new();
-        let mut last_chunk = String::new();
-
-        while let Some(chunk) = stream.next().await {
-            let chunk = chunk.context("Failed to read stream chunk")?;
-            let line = String::from_utf8(chunk.to_vec())
-                .context("Failed to parse chunk as UTF-8")?;
-
-            if !line.starts_with("data: ") || line.contains("[DONE]") {
-                continue;
-            }
-
-            last_chunk = line.clone();
-
-            let sse_json: Value = serde_json::from_str(&line[6..])
-                .context("Failed to parse SSE JSON")?;
-
-            let content = sse_json["choices"][0]["delta"]["content"].as_str();
-            if let Some(text) = content {
-                if io::stdout().flush().is_err() {
-                    eprintln!("Warning: Failed to flush stdout");
+        let stream = stream! {
+            let mut stream = res.bytes_stream();
+            while let Some(chunk) = stream.next().await {
+                let chunk = match chunk {
+                    Ok(c) => c,
+                    Err(_) => continue,
+                };
+                let line = match String::from_utf8(chunk.to_vec()) {
+                    Ok(l) => l,
+                    Err(_) => continue,
+                };
+                if !line.starts_with("data: ") || line.contains("[DONE]") {
+                    continue;
                 }
-                print!("{}", text);
-                responses.push(String::from(text));
+                let sse_json: Value = match serde_json::from_str(&line[6..]) {
+                    Ok(j) => j,
+                    Err(_) => continue,
+                };
+                yield sse_json;
             }
-        }
-
-        let complete_message = responses.join("");
-
-        let final_response = match last_chunk
-            .lines()
-            .filter(|line| line.starts_with("data: ") && !line.contains("[DONE]"))
-            .last()
-            .and_then(|line| serde_json::from_str::<Value>(&line[6..]).ok())
-        {
-            Some(mut json) => {
-                if let Some(obj) = json.as_object_mut() {
-                    obj["choices"][0]["message"]["content"] =
-                        Value::String(complete_message.clone());
-                }
-                Some(json)
-            }
-            None => Some(serde_json::json!({
-                "choices": [{
-                    "message": {
-                        "content": complete_message
-                    }
-                }]
-            })),
         };
-
-        final_response.context("Failed to create final response")
+        Pin::from(Box::new(stream))
     }
 
     pub async fn get_models(&self) -> Result<Models> {

@@ -8,9 +8,9 @@ defineProps<{
 
 <template>
   <div :class="['message', message.isUser ? 'user-message' : 'bot-message']">
-    <div class="message-content" v-if="!message.isLoading">{{ message.text }}</div>
-    <div class="message-content loading-message" v-else>
-      <div class="loading-dots">
+    <div class="message-content" :class="{ 'with-loading': message.isLoading }">
+      {{ message.text }}
+      <div class="loading-dots" v-if="message.isLoading">
         <span></span>
         <span></span>
         <span></span>
@@ -34,6 +34,13 @@ defineProps<{
   white-space: pre-wrap;
   font-size: 1rem;
   line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.message-content.with-loading {
+  min-width: 60px;
 }
 
 .user-message {

@@ -4,8 +4,7 @@ use crate::{
 };
 use anyhow::{Context, Result};
 use serde_json::Value;
-use tauri::State;
-use crate::models::context::AppContext;
+use futures_util::Stream;
 
 pub struct MarshoHandler {
     config: MarshoConfig,
@@ -27,17 +26,11 @@ impl MarshoHandler {
         &mut self,
         input: String,
         context: MarshoContext,
-        stream: bool,
-    ) -> Result<Value> {
+    ) -> impl Stream<Item = Value> {
         let mut message = vec![BaseMessage::system(self.config.system_prompt.to_string())];
         message.extend(context.get().iter().cloned());
         message.extend(vec![BaseMessage::user(input.to_string())]);
-        
-        if stream {
-            self.client.make_chat_stream(&mut self.model_config, message).await
-        } else {
-            self.client.make_chat(&mut self.model_config, message).await
-        }
+        self.client.make_chat_stream(&mut self.model_config, message).await
     }
 
     pub async fn models(&mut self) -> Result<()> {
