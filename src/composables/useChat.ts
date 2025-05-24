@@ -17,31 +17,33 @@ export function useChat() {
     try {
       const onEvent = new Channel<ChatEvent>();
       onEvent.onmessage = (message: any) => {
-        if (message.event === "stopped") {
+        if (message.event === "outputing") {
           const choices = (message.data && (message.data as any)["message"]["choices"]) || [];
           const content = choices[0]?.delta?.content || "";
-          const finishReason = choices[0]?.finish_reason;
-          console.log(content);
           if (content) {
             aiContent += content;
             const lastIndex = messages.value.length - 1;
             messages.value[lastIndex] = {
               ...messages.value[lastIndex],
               text: aiContent,
-              isLoading: finishReason != "stop"
+              isLoading: true
             };
             scrollToBottom();
           }
+        } else if (message.event === "finished") {
+          console.log("输出完成：", message.data);
+          // 当收到 finished 事件时，移除加载状态
+          const lastIndex = messages.value.length - 1;
+          messages.value[lastIndex] = {
+            ...messages.value[lastIndex],
+            text: aiContent,
+            isLoading: false
+          };
+          scrollToBottom();
         }
       };     
       await invoke("make_chat", { question: text, onEvent });
-      // 最终输出完成，确保 loading 状态被移除
-      const lastIndex = messages.value.length - 1;
-      messages.value[lastIndex] = { 
-        ...messages.value[lastIndex],
-        text: aiContent,
-        isLoading: false 
-      };
+      // 最终结果已经在 finished 事件中处理，这里不需要重复设置
     } catch (error: any) {
       console.error(error);
       const lastIndex = messages.value.length - 1;

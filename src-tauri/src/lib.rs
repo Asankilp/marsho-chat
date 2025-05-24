@@ -19,8 +19,11 @@ enum ChatEvent {
     Started {
         question: String
     },
-    Stopped {
+    Outputing {
         message: Value
+    },
+    Finished {
+        status: String
     },
 }
 
@@ -52,17 +55,18 @@ async fn make_chat(question: String, on_event: Channel<ChatEvent>) {
 
     let context = MarshoContext::new();
     let mut handler = MarshoHandler::new(marsho_config, model_config);
-    println!("aaaaa");
     on_event.send(ChatEvent::Started {
         question: question.clone(),
     }).unwrap();
     let mut results = handler.handle(question.to_string(), context).await;
     while let Some(message) = results.next().await {
-        on_event.send(ChatEvent::Stopped {
+        on_event.send(ChatEvent::Outputing {
             message: message,
         }).unwrap();
-        
     }
+    on_event.send(ChatEvent::Finished {
+        status: "success".to_string(),
+    }).unwrap();
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

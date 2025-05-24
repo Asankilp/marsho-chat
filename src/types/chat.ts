@@ -12,8 +12,14 @@ export type ChatEvent =
     };
   }
   | {
-    event: 'stopped',
+    event: 'outputing',
     data: {
-      message : object;
+      message: object;
+    };
+  }
+  | {
+    event: 'finished',
+    data: {
+      status: string;
     };
   }
